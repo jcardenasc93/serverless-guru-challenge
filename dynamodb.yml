@@ -1,0 +1,17 @@
+# dynamodb.yml
+
+airlineTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: ${self:provider.environment.DYNAMODB_AIRLINE_TABLE}
+    AttributeDefinitions:
+      - AttributeName: uuid # Partition key
+        AttributeType: S
+      - AttributeName: created_at
+        AttributeType: S
+    KeySchema:
+      - AttributeName: uuid
+        KeyType: HASH
+      - AttributeName: created_at
+        KeyType: RANGE
+    BillingMode: PAY_PER_REQUEST

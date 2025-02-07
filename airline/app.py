@@ -2,7 +2,9 @@ from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from airline.routes.airlines import airline_router
+from airline.config import app_settings
 from common.errors import APIError, APIErrorException
+from mangum import Mangum
 
 app = FastAPI(title="Airlines API")
 
@@ -25,4 +27,6 @@ async def api_exception_handler(_, exc: RequestValidationError) -> JSONResponse:
     )
 
 
-app.include_router(airline_router)
+app.include_router(airline_router, prefix="/airlines/api/v1")
+
+handler = Mangum(app)

@@ -11,7 +11,7 @@ from airline.config import app_settings
 
 logger = logging.getLogger(__name__)
 
-TABLE_NAME = app_settings.TABLE_NAME
+TABLE_NAME = app_settings.DYNAMODB_AIRLINE_TABLE
 
 
 class AirlineTable:
@@ -19,47 +19,7 @@ class AirlineTable:
 
     def __init__(self, dynamodb_resource: Any) -> None:
         self._dyn_resource = dynamodb_resource
-        self._table: Any = None
-
-    def exists(self) -> bool:
-        try:
-            table: Any = self._dyn_resource.Table(TABLE_NAME)
-            table.load()
-        except ClientError as e:
-            err = e.response
-            if err["Error"]["Code"] == "ResourceNotFoundException":
-                logger.error(
-                    msg=f"Table '{TABLE_NAME}' doesn't exists. Details: {err['Error']['Message']}"
-                )
-                return False
-        else:
-            self._table = table
-        return True
-
-    def create_table(self) -> None:
-        try:
-            table = self._dyn_resource.create_table(
-                TableName=TABLE_NAME,
-                KeySchema=[
-                    {"AttributeName": "uuid", "KeyType": "HASH"},  # Partition key
-                    {"AttributeName": "created_at", "KeyType": "RANGE"},
-                ],
-                AttributeDefinitions=[
-                    {"AttributeName": "uuid", "AttributeType": "S"},
-                    {"AttributeName": "created_at", "AttributeType": "S"},
-                ],
-                ProvisionedThroughput={
-                    "ReadCapacityUnits": 5,
-                    "WriteCapacityUnits": 5,
-                },
-            )
-            table.wait_until_exists()
-        except ClientError as err:
-            logger.error(
-                f"Couldn't create table {TABLE_NAME}. Details: {err.response['Error']['Message']}",
-            )
-            raise err
-        self._table = table
+        self._table: Any = self._dyn_resource.Table(TABLE_NAME)
 
     def fetch_airlines(self) -> list[AirlineRead]:
         try:
@@ -100,13 +60,15 @@ class AirlineTable:
             updated_at=str(now),
         )
         try:
-            data = airline_data.model_dump()
-            self._table.put_item(Item=airline_data.model_dump())
+            data_dict = airline_data.model_dump()
+            self._table.put_item(Item=data_dict)
         except ClientError as e:
             err = e.response
             logger.error(
                 msg=f"Couldn't create new item on '{TABLE_NAME}' table. Details: {err['Error']['Message']}"
             )
+            raise e
+        except Exception as e:
             raise e
 
         return airline_data
@@ -128,6 +90,3 @@ else:
             aws_secret_access_key="dummy-secret-key",
         )
     )
-
-    if airline_table.exists() is False:
-        airline_table.create_table()

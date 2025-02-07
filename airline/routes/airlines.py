@@ -7,7 +7,7 @@ from airline.schemas import AirlineCreateRequest
 from common.errors import APIErrorException
 
 
-airline_router = APIRouter(prefix="/api/v1", tags=["airlines"])
+airline_router = APIRouter(tags=["airlines"])
 
 
 @airline_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -16,7 +16,7 @@ async def create_airline(request: AirlineCreateRequest) -> AirlineResponse:
         new_airline = airline_table.create_airline(data=request)
     except Exception as e:
         raise APIErrorException(
-            detail="Error from data source",
+            detail=f"Error from data source: {str(e)}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -29,7 +29,7 @@ async def fetch_airlines() -> AirlineResponse:
         airlines = airline_table.fetch_airlines()
     except Exception as e:
         raise APIErrorException(
-            detail="Error from data source",
+            detail=f"Error from data source: {str(e)}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -44,7 +44,7 @@ async def fetch_airline_by_uuid(
         airline = airline_table.fetch_airline_by_uuid(airline_uuid)
     except Exception as e:
         raise APIErrorException(
-            detail="Error from data source",
+            detail=f"Error from data source: {str(e)}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

@@ -1,0 +1,52 @@
+# serverless.yml
+
+org: jcardenasc93personal
+
+service: airlines-app
+frameworkVersion: '4.6.2'
+
+provider:
+  name: aws
+  runtime: python3.10
+  region: us-east-1
+  environment:
+    DYNAMODB_AIRLINE_TABLE: ${sls:stage}-airlineTable
+    ENVIRONMENT: ${sls:stage}
+  stage: ${sls:stage, 'dev'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_AIRLINE_TABLE}"
+
+resources:
+  Resources:
+    ${file(./dynamodb.yml)}
+
+
+functions:
+  airlineAPI:
+    name: ${sls:stage}-airlineLambda
+    handler: airline.app.handler
+    timeout: 60
+    environment:
+      DYNAMODB_AIRLINE_TABLE: ${self:provider.environment.DYNAMODB_AIRLINE_TABLE}
+    events:
+      - httpApi:
+          path: /airlines/api/v1/{proxy+}
+          method: any
+      - httpApi:
+          path: /airlines/api/v1
+          method: any
+
+plugins:
+  - serverless-python-requirements
