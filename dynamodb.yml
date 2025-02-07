@@ -15,3 +15,36 @@ airlineTable:
       - AttributeName: created_at
         KeyType: RANGE
     BillingMode: PAY_PER_REQUEST
+
+destinationTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: ${self:provider.environment.DYNAMODB_DESTINATION_TABLE}
+    AttributeDefinitions:
+      - AttributeName: uuid # Partition key
+        AttributeType: S
+      - AttributeName: created_at
+        AttributeType: S
+      - AttributeName: airline_uuid
+        AttributeType: S
+      - AttributeName: active
+        AttributeType: N
+    KeySchema:
+      - AttributeName: uuid
+        KeyType: HASH
+      - AttributeName: created_at
+        KeyType: RANGE
+    GlobalSecondaryIndexes:
+      - IndexName: airline-index
+        KeySchema:
+          - AttributeName: airline_uuid
+            KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: active-index
+        KeySchema:
+          - AttributeName: active
+            KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+    BillingMode: PAY_PER_REQUEST

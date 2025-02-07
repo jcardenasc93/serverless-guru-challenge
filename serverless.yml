@@ -10,8 +10,9 @@ provider:
   runtime: python3.10
   region: us-east-1
   environment:
-    DYNAMODB_AIRLINE_TABLE: ${sls:stage}-airlineTable
     ENVIRONMENT: ${sls:stage}
+    DYNAMODB_AIRLINE_TABLE: ${sls:stage}-airlineTable
+    DYNAMODB_DESTINATION_TABLE: ${sls:stage}-destinationTable
   stage: ${sls:stage, 'dev'}
   iam:
     role:
@@ -37,9 +38,7 @@ functions:
   airlineAPI:
     name: ${sls:stage}-airlineLambda
     handler: airline.app.handler
-    timeout: 60
-    environment:
-      DYNAMODB_AIRLINE_TABLE: ${self:provider.environment.DYNAMODB_AIRLINE_TABLE}
+    timeout: 15
     events:
       - httpApi:
           path: /airlines/api/v1/{proxy+}
@@ -50,3 +49,7 @@ functions:
 
 plugins:
   - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    slim: true
