@@ -25,9 +25,20 @@ class DestinationTable:
         self._dyn_resource = dynamodb_resource
         self._table: Any = self._dyn_resource.Table(TABLE_NAME)
 
+    def fetch_destinations(self) -> list[DestinationRead]:
+        try:
+            destinations = self._table.scan()["Items"]
+        except ClientError as e:
+            err = e.response
+            msg = f"Couldn't fetch data from '{TABLE_NAME}' table. Details: {err['Error']['Message']}"
+            logger.error(msg=msg)
+            raise e
+
+        return [DestinationRead(**destination) for destination in destinations]
+
     def fetch_airline_destinations(self, airline_uuid: UUID) -> list[DestinationRead]:
         try:
-            destinations = self._table.query(
+            response = self._table.query(
                 IndexName="airline-index",
                 KeyConditionExpression=Key("airline_uuid").eq(str(airline_uuid)),
             )
@@ -37,7 +48,8 @@ class DestinationTable:
             logger.error(msg=msg)
             raise e
 
-        return [DestinationRead(**airline) for airline in destinations]
+        destinations = response.get("Items", [])
+        return [DestinationRead(**destination) for destination in destinations]
 
     def fetch_destination_by_uuid(self, uuid: UUID) -> DestinationRead | None:
         try:

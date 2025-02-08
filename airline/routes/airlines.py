@@ -46,6 +46,12 @@ async def fetch_airline_by_uuid(airline_uuid: UUID) -> AirlineResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
+    if airline is None:
+        raise APIErrorException(
+            detail="No airline found",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
     return AirlineResponse(data=airline)
 
 

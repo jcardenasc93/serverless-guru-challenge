@@ -13,6 +13,7 @@ provider:
     ENVIRONMENT: ${sls:stage}
     DYNAMODB_AIRLINE_TABLE: ${sls:stage}-airlineTable
     DYNAMODB_DESTINATION_TABLE: ${sls:stage}-destinationTable
+    AIRLINES_ENDPOINT_URL: ${cf:${self:service}-${self:provider.stage}.airlinesAPIURL}
   stage: ${sls:stage, 'dev'}
   iam:
     role:
@@ -29,10 +30,17 @@ provider:
           Resource:
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_AIRLINE_TABLE}"
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_DESTINATION_TABLE}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_DESTINATION_TABLE}/index/airline-index"
 
 resources:
   Resources:
     ${file(./dynamodb.yml)}
+  Outputs:
+    airlinesAPIURL:
+      Value:
+        Fn::Sub: "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/airlines/api/v1/"
+      Export:
+        Name: ${self:service}-${self:provider.stage}-airlinesAPIURL
 
 
 functions:
