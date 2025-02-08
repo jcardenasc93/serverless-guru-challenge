@@ -6,7 +6,7 @@ from boto3.dynamodb.conditions import Key
 import logging
 
 from botocore.exceptions import ClientError
-from airline.schemas import AirlineCreateRequest, AirlineRead
+from airline.schemas import AirlineCreateRequest, AirlineRead, AirlineUpdateRequest
 from airline.config import app_settings
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class AirlineTable:
         airline_uuid = uuid4()
         now = datetime.now(tz=timezone.utc)
         airline_data = AirlineRead(
-            name=data.name,
+            airline_name=data.airline_name,
             country=data.country,
             uuid=str(airline_uuid),
             created_at=str(now),
@@ -72,6 +72,48 @@ class AirlineTable:
             raise e
 
         return airline_data
+
+    def update_airline(
+        self, airline_uuid: UUID, data: AirlineUpdateRequest
+    ) -> AirlineRead | None:
+        now = datetime.now(tz=timezone.utc)
+
+        update_expr_parts = []
+        expr_attr_values = {}
+
+        if data.airline_name is not None:
+            update_expr_parts.append("airline_name = :n")
+            expr_attr_values[":n"] = data.airline_name
+
+        if data.country is not None:
+            update_expr_parts.append("country = :c")
+            expr_attr_values[":c"] = data.country
+
+        # If no attributes to update, return None
+        if not update_expr_parts:
+            return None
+
+        update_expr_parts.append("updated_at = :t")
+        update_expr = "SET " + ", ".join(update_expr_parts)
+        expr_attr_values[":t"] = str(now)
+
+        try:
+            response = self._table.update_item(
+                Key={"uuid": str(airline_uuid)},
+                UpdateExpression=update_expr,
+                ExpressionAttributeValues=expr_attr_values,
+                ReturnValues="ALL_NEW",
+            )
+        except ClientError as e:
+            err = e.response
+            logger.error(
+                msg=f"Couldn't update item on '{TABLE_NAME}' table. Details: {err['Error']['Message']}"
+            )
+            raise e
+        except Exception as e:
+            raise e
+        new_data = response["Attributes"]
+        return AirlineRead(**new_data)
 
 
 if app_settings.ENVIRONMENT != "local":

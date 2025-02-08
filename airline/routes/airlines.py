@@ -1,9 +1,9 @@
 from uuid import UUID
-from fastapi import Response, status
+from fastapi import status
 from fastapi import APIRouter
 from airline.db import airline_table
 from airline.responses import AirlineResponse
-from airline.schemas import AirlineCreateRequest
+from airline.schemas import AirlineCreateRequest, AirlineUpdateRequest
 from common.errors import APIErrorException
 
 
@@ -37,11 +37,24 @@ async def fetch_airlines() -> AirlineResponse:
 
 
 @airline_router.get("/{airline_uuid}")
-async def fetch_airline_by_uuid(
-    airline_uuid: UUID, response: Response
-) -> AirlineResponse:
+async def fetch_airline_by_uuid(airline_uuid: UUID) -> AirlineResponse:
     try:
         airline = airline_table.fetch_airline_by_uuid(airline_uuid)
+    except Exception as e:
+        raise APIErrorException(
+            detail=f"Error from data source: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return AirlineResponse(data=airline)
+
+
+@airline_router.put("/{airline_uuid}")
+async def update_airline(
+    airline_uuid: UUID, request: AirlineUpdateRequest
+) -> AirlineResponse:
+    try:
+        airline = airline_table.update_airline(airline_uuid=airline_uuid, data=request)
     except Exception as e:
         raise APIErrorException(
             detail=f"Error from data source: {str(e)}",

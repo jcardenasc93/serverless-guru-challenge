@@ -39,6 +39,10 @@ functions:
     name: ${sls:stage}-airlineLambda
     handler: airline.app.handler
     timeout: 15
+    package:
+      include:
+        - ./airline/**
+        - ./common/**
     events:
       - httpApi:
           path: /airlines/api/v1/{proxy+}

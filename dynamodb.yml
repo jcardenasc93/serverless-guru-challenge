@@ -7,13 +7,9 @@ airlineTable:
     AttributeDefinitions:
       - AttributeName: uuid # Partition key
         AttributeType: S
-      - AttributeName: created_at
-        AttributeType: S
     KeySchema:
       - AttributeName: uuid
         KeyType: HASH
-      - AttributeName: created_at
-        KeyType: RANGE
     BillingMode: PAY_PER_REQUEST
 
 destinationTable:
@@ -23,8 +19,6 @@ destinationTable:
     AttributeDefinitions:
       - AttributeName: uuid # Partition key
         AttributeType: S
-      - AttributeName: created_at
-        AttributeType: S
       - AttributeName: airline_uuid
         AttributeType: S
       - AttributeName: active
@@ -32,8 +26,6 @@ destinationTable:
     KeySchema:
       - AttributeName: uuid
         KeyType: HASH
-      - AttributeName: created_at
-        KeyType: RANGE
     GlobalSecondaryIndexes:
       - IndexName: airline-index
         KeySchema:
