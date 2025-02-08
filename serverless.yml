@@ -28,6 +28,7 @@ provider:
             - dynamodb:DeleteItem
           Resource:
             - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_AIRLINE_TABLE}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_DESTINATION_TABLE}"
 
 resources:
   Resources:
@@ -49,6 +50,21 @@ functions:
           method: any
       - httpApi:
           path: /airlines/api/v1
+          method: any
+  destinationAPI:
+    name: ${sls:stage}-destinationLambda
+    handler: destination.app.handler
+    timeout: 15
+    package:
+      include:
+        - ./destination/**
+        - ./common/**
+    events:
+      - httpApi:
+          path: /destinations/api/v1/{proxy+}
+          method: any
+      - httpApi:
+          path: /destinations/api/v1
           method: any
 
 plugins:
